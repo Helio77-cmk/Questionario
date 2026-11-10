@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Current News Quiz</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--text:#1d1d1b;--muted:#6b6a65;--accent:#1a5fb4;--border:#dcdad2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181a;--card:#222427;--text:#ecebe6;--muted:#9a9990;--accent:#6ea8ff;--border:#383a3e}}
+:root[data-theme="dark"]{--bg:#17181a;--card:#222427;--text:#ecebe6;--muted:#9a9990;--accent:#6ea8ff;--border:#383a3e}
+html{color-scheme:light dark}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+main{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--muted);font-family:system-ui,sans-serif;font-size:.9rem;margin:0 0 20px}
+.q{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.tag{font:600 .7rem system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.q p{margin:6px 0 10px;font-size:1.05rem}
+textarea{width:100%;box-sizing:border-box;min-height:70px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font:.95rem system-ui,sans-serif;resize:vertical}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+button{font:600 .95rem system-ui,sans-serif;padding:10px 16px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.alt{background:transparent;color:var(--accent)}
+.count{color:var(--muted);font:.85rem system-ui,sans-serif;margin-left:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Current News Quiz</h1>
+<p class="sub">5 open questions per round, drawn from a bank of 50. Answer in your own words, based on what you saw on the news.</p>
+<div id="list"></div>
+<div class="bar">
+<button id="next">New 5 questions</button>
+<button id="copy" class="alt">Copy my answers</button>
+<span class="count" id="count"></span>
+</div>
+</main>
+<script>
+var BANK=[
+["Brazil","What was the most talked-about news story in Brazil this week, and why did it matter?"],
+["Brazil","Which decision by the federal government has people discussing the most right now?"],
+["Brazil","What is happening in the National Congress that could affect everyday life?"],
+["Brazil","Which recent court ruling or judicial decision caught your attention?"],
+["Brazil","What political event or debate stood out to you recently?"],
+["Brazil","What recent news about public services (health, education, transport) did you notice?"],
+["Brazil","Which state or city was most in the headlines recently, and for what reason?"],
+["Brazil","What recent announcement about taxes or public spending have you heard?"],
+["Brazil","What news about elections or political parties have you followed lately?"],
+["Brazil","Which public figure was most in the news this week, and what was the story?"],
+["Economy","What is the latest news about the prices of food or fuel?"],
+["Economy","What have you heard recently about interest rates or inflation?"],
+["Economy","What is the latest news about jobs and unemployment?"],
+["Economy","How has the exchange rate of the dollar been in the news lately?"],
+["Economy","Which company or industry was in the economic headlines recently?"],
+["Economy","What recent news about salaries, benefits, or pensions have you seen?"],
+["Economy","What news about Brazilian exports or agriculture caught your attention?"],
+["Economy","What recent change in consumer habits or shopping trends was reported?"],
+["Economy","What news about housing, rent, or home financing have you noticed?"],
+["Economy","What economic story do you think will matter most over the next few months?"],
+["World","What is the biggest international news story of the week?"],
+["World","Which foreign leader or government was most in the news, and why?"],
+["World","What is the latest news about an ongoing international conflict?"],
+["World","What recent news about the relationship between Brazil and another country did you see?"],
+["World","Which international meeting, summit, or agreement was recently reported?"],
+["World","What recent news about the United States has been getting attention?"],
+["World","What recent news from Europe, Asia, or Africa stood out to you?"],
+["World","What humanitarian or refugee story have you seen recently?"],
+["World","What global economic or trade news have you followed lately?"],
+["World","Which election or political change abroad has been in the news?"],
+["Society","What recent news about public safety or crime in Brazil stood out?"],
+["Society","What recent health news (diseases, vaccines, hospitals) did you notice?"],
+["Society","What recent news about education, schools, or exams have you seen?"],
+["Society","What story about weather, floods, droughts, or natural disasters was in the news?"],
+["Society","What environmental news (forests, climate, pollution) caught your attention?"],
+["Society","What recent news about traffic, roads, or public transportation have you heard?"],
+["Society","What story about families, children, or older people moved you recently?"],
+["Society","What recent news about rights, equality, or social movements did you see?"],
+["Society","What local community story was reported that made you stop and watch?"],
+["Society","What news story left you feeling hopeful recently?"],
+["Tech & Science","What recent news about technology or artificial intelligence did you notice?"],
+["Tech & Science","What recent news about social media or online safety have you heard?"],
+["Tech & Science","What recent scientific discovery or space news was reported?"],
+["Tech & Science","What news about energy (oil, electricity, renewables) caught your attention?"],
+["Tech & Science","What recent innovation could change how people live or work?"],
+["Culture & Sports","What recent sports result or event was most talked about?"],
+["Culture & Sports","Which athlete or team was in the headlines recently, and why?"],
+["Culture & Sports","What recent music, film, or TV news did you hear about?"],
+["Culture & Sports","What cultural event, festival, or celebration was in the news?"],
+["Culture & Sports","If you had to name the single biggest story of the past week, what would it be and why?"]
+];
+var used=[],current=[];
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function draw(){
+  var pool=[];for(var i=0;i<BANK.length;i++){if(used.indexOf(i)<0)pool.push(i)}
+  if(pool.length<5){used=[];pool=BANK.map(function(_,i){return i})}
+  current=shuffle(pool).slice(0,5);
+  used=used.concat(current);
+  render();
+}
+function render(){
+  var html="";
+  current.forEach(function(idx,n){
+    html+='<div class="q"><span class="tag">'+(n+1)+' · '+BANK[idx][0]+'</span><p>'+BANK[idx][1]+'</p><textarea placeholder="Your answer…"></textarea></div>';
+  });
+  document.getElementById("list").innerHTML=html;
+  document.getElementById("count").textContent=used.length+" of "+BANK.length+" questions seen";
+}
+document.getElementById("next").onclick=draw;
+document.getElementById("copy").onclick=function(){
+  var tas=document.querySelectorAll("textarea"),out=[];
+  current.forEach(function(idx,n){out.push((n+1)+". "+BANK[idx][1]+"\n"+(tas[n].value||"(no answer)"))});
+  var text=out.join("\n\n"),btn=this;
+  try{navigator.clipboard.writeText(text).then(function(){btn.textContent="Copied!";setTimeout(function(){btn.textContent="Copy my answers"},1500)})}catch(e){}
+};
+draw();
+</script>
+</body>
+</html>
